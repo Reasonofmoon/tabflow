@@ -15,6 +15,7 @@ import { render, renderMain, updateStats, updateBadges, updateSelBar } from '../
 import { attachDrag } from '../ui/drag-drop.js';
 import { showContextMenu, hideContextMenu, handleContextAction, initContextMenuDismiss } from '../ui/context-menu.js';
 import { toast } from '../ui/toast.js';
+import { maybeShowOnboarding, showOnboarding } from '../ui/onboarding.js';
 
 // ===================================================================
 //  DATA LOADING — Replace demo data with Chrome API calls
@@ -123,6 +124,7 @@ async function init() {
   render();
   attachDrag(() => { loadTabs().then(render); });
   initContextMenuDismiss();
+  maybeShowOnboarding();
   setupEventDelegation();
   setupSearchInput();
   setupPanelInput();
@@ -484,6 +486,15 @@ function setupEventDelegation() {
           }
           break;
         }
+
+        // ── Tutorial ──
+        case 'replay-tutorial':
+          showOnboarding(val || 'ko');
+          break;
+        case 'reset-onboarding':
+          try { await chrome.storage.local.remove('onboardingDone'); } catch {}
+          showOnboarding(val || 'ko');
+          break;
       }
     } catch (err) {
       console.error(`Action "${action}" failed:`, err);

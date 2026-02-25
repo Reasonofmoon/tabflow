@@ -566,6 +566,13 @@ function renderSettings(m) {
         <button class="btn btn-sm btn-s" data-action="import-json">📤 JSON 가져오기</button>
       </div>
     </div>
+    <div class="sett"><h3>📖 튜토리얼</h3>
+      <p style="font-size:var(--fs-base);color:var(--text-2);margin-bottom:12px;line-height:var(--lh-relaxed)">처음 사용법을 다시 확인하려면 튜토리얼을 재생하세요.</p>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-p" data-action="replay-tutorial" data-val="ko">🇰🇷 한국어 가이드</button>
+        <button class="btn btn-sm" data-action="replay-tutorial" data-val="en">🇺🇸 English Guide</button>
+      </div>
+    </div>
     <div class="sett"><h3>ℹ️ 정보</h3>
       <div style="font-size:var(--fs-base);color:var(--text-2);line-height:var(--lh-relaxed)">
         <strong>TabFlow Pro</strong> v1.0<br>
