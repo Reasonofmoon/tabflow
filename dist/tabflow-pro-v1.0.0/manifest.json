@@ -12,12 +12,7 @@
     "history",
     "storage",
     "sidePanel",
-    "contextMenus",
-    "favicon"
-  ],
-
-  "host_permissions": [
-    "<all_urls>"
+    "contextMenus"
   ],
 
   "background": {

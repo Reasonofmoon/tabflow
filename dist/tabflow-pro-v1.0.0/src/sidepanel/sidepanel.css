@@ -113,8 +113,8 @@
   --r-lg: 14px;
   --r-xl: 18px;
   --t: .18s cubic-bezier(.4,0,.2,1);
-  --font: 'DM Sans', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-  --mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  --mono: 'Consolas', 'Courier New', monospace;
   /* Font scale */
   --fs-xs: 10px;
   --fs-sm: 11.5px;
