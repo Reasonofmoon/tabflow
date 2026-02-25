@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,6 +30,11 @@
     </div>
   </div>
   <div class="header-right">
+    <div class="theme-toggle" id="themeToggle">
+      <button data-action="set-theme" data-val="light" title="라이트 모드">☀️</button>
+      <button data-action="set-theme" data-val="dark" class="active" title="다크 모드">🌙</button>
+      <button data-action="set-theme" data-val="system" title="시스템 설정">💻</button>
+    </div>
     <button class="btn" data-action="open-panel">➕ 새 탭</button>
     <button class="btn btn-s" data-action="do-sync">☁️ 동기화</button>
     <button class="btn btn-w" data-action="export-json">📥 백업</button>
@@ -40,20 +45,47 @@
 <aside class="sidebar">
   <div class="sb-sec">
     <div class="sb-title">탭 매니저</div>
-    <div class="sb-item active" data-v="tabs" data-action="nav" data-val="tabs"><span class="ic">📋</span>전체 탭<span class="sb-badge" id="bAll">0</span></div>
-    <div class="sb-item" data-v="groups" data-action="nav" data-val="groups"><span class="ic">📁</span>탭 그룹<span class="sb-badge" id="bGrp">0</span></div>
+    <div class="sb-item active" data-v="tabs" data-action="nav" data-val="tabs">
+      <span class="ic">📋</span>
+      <div class="sb-item-text"><span class="sb-item-label">전체 탭</span><span class="sb-item-desc">모든 윈도우의 탭을 한눈에</span></div>
+      <span class="sb-badge" id="bAll">0</span>
+    </div>
+    <div class="sb-item" data-v="groups" data-action="nav" data-val="groups">
+      <span class="ic">📁</span>
+      <div class="sb-item-text"><span class="sb-item-label">탭 그룹</span><span class="sb-item-desc">키워드 기반 자동 그룹핑</span></div>
+      <span class="sb-badge" id="bGrp">0</span>
+    </div>
   </div>
   <div class="sb-sec">
     <div class="sb-title">북마크 매니저</div>
-    <div class="sb-item" data-v="bm-dash" data-action="nav" data-val="bm-dash"><span class="ic">📊</span>대시보드</div>
-    <div class="sb-item" data-v="bm-all" data-action="nav" data-val="bm-all"><span class="ic">⭐</span>전체 북마크<span class="sb-badge" id="bBm">0</span></div>
-    <div class="sb-item" data-v="bm-clean" data-action="nav" data-val="bm-clean"><span class="ic">🧹</span>청소 도구</div>
-    <div class="sb-item" data-v="bm-cards" data-action="nav" data-val="bm-cards"><span class="ic">🃏</span>카드 뷰</div>
+    <div class="sb-item" data-v="bm-dash" data-action="nav" data-val="bm-dash">
+      <span class="ic">📊</span>
+      <div class="sb-item-text"><span class="sb-item-label">대시보드</span><span class="sb-item-desc">건강도 분석 & 통계</span></div>
+    </div>
+    <div class="sb-item" data-v="bm-all" data-action="nav" data-val="bm-all">
+      <span class="ic">⭐</span>
+      <div class="sb-item-text"><span class="sb-item-label">전체 북마크</span><span class="sb-item-desc">폴더별 브라우징 + AI 분류</span></div>
+      <span class="sb-badge" id="bBm">0</span>
+    </div>
+    <div class="sb-item" data-v="bm-clean" data-action="nav" data-val="bm-clean">
+      <span class="ic">🧹</span>
+      <div class="sb-item-text"><span class="sb-item-label">청소 도구</span><span class="sb-item-desc">중복 · 깨진링크 · 빈폴더 정리</span></div>
+    </div>
+    <div class="sb-item" data-v="bm-cards" data-action="nav" data-val="bm-cards">
+      <span class="ic">🃏</span>
+      <div class="sb-item-text"><span class="sb-item-label">카드 뷰</span><span class="sb-item-desc">카드 형태로 시각적 탐색</span></div>
+    </div>
   </div>
   <div class="sb-sec">
     <div class="sb-title">기타</div>
-    <div class="sb-item" data-v="history" data-action="nav" data-val="history"><span class="ic">🕐</span>방문기록</div>
-    <div class="sb-item" data-v="settings" data-action="nav" data-val="settings"><span class="ic">⚙️</span>설정</div>
+    <div class="sb-item" data-v="history" data-action="nav" data-val="history">
+      <span class="ic">🕐</span>
+      <div class="sb-item-text"><span class="sb-item-label">방문기록</span><span class="sb-item-desc">최근 방문 사이트 검색</span></div>
+    </div>
+    <div class="sb-item" data-v="settings" data-action="nav" data-val="settings">
+      <span class="ic">⚙️</span>
+      <div class="sb-item-text"><span class="sb-item-label">설정</span><span class="sb-item-desc">동기화 · 자동분류 · 백업</span></div>
+    </div>
   </div>
   <div class="sb-divider"></div>
   <div class="sb-sec">
@@ -61,7 +93,7 @@
     <div class="sb-windows" id="sbWins"></div>
   </div>
   <div class="sb-footer">
-    <div class="sync-badge"><div class="sync-pulse"></div><span>동기화 연결됨</span><span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--text-3)">방금</span></div>
+    <div class="sync-badge"><div class="sync-pulse"></div><span>동기화 연결됨</span><span style="margin-left:auto;font-family:var(--mono);font-size:var(--fs-xs);color:var(--text-3)">방금</span></div>
   </div>
 </aside>
 

@@ -83,9 +83,42 @@ function recalcBookmarks() {
 }
 
 // ===================================================================
+//  THEME MANAGEMENT
+// ===================================================================
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  // Update theme toggle buttons
+  document.querySelectorAll('#themeToggle button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === theme);
+  });
+  // Also update settings page if visible
+  document.querySelectorAll('[data-action="set-theme"]').forEach(btn => {
+    btn.classList.remove('btn-p');
+    if (btn.dataset.val === theme) btn.classList.add('btn-p');
+  });
+}
+
+async function loadSavedTheme() {
+  try {
+    const result = await chrome.storage.sync.get('theme');
+    applyTheme(result.theme || 'dark');
+  } catch {
+    applyTheme('dark');
+  }
+}
+
+async function setTheme(theme) {
+  applyTheme(theme);
+  try { await chrome.storage.sync.set({ theme }); } catch {}
+  toast(theme === 'light' ? '☀️' : theme === 'dark' ? '🌙' : '💻',
+    theme === 'light' ? '라이트 모드' : theme === 'dark' ? '다크 모드' : '시스템 모드');
+}
+
+// ===================================================================
 //  INITIALIZATION
 // ===================================================================
 async function init() {
+  await loadSavedTheme();
   await Promise.all([loadTabs(), loadBookmarks(), loadHistory()]);
   render();
   attachDrag(() => { loadTabs().then(render); });
@@ -432,6 +465,25 @@ function setupEventDelegation() {
           await createTab(target.dataset.url);
           closePanel();
           break;
+
+        // ── Theme ──
+        case 'set-theme':
+          await setTheme(val);
+          render();
+          break;
+
+        // ── Add to bookmark from history ──
+        case 'add-to-bm': {
+          const url = target.dataset.url;
+          const title = target.dataset.title;
+          if (url) {
+            await chrome.bookmarks.create({ title: title || url, url });
+            toast('⭐', '북마크에 추가됨');
+            await loadBookmarks();
+            render();
+          }
+          break;
+        }
       }
     } catch (err) {
       console.error(`Action "${action}" failed:`, err);
