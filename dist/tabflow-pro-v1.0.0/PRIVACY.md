@@ -4,7 +4,7 @@ Last updated: February 25, 2026
 
 ## Overview
 
-TabFlow Pro is a tab and bookmark management Chrome Extension. It does not collect, transmit, or sell personal data. All data processing occurs locally within your browser.
+Moon-TabFlow is a tab and bookmark management Chrome Extension. It does not collect, transmit, or sell personal data. All data processing occurs locally within your browser.
 
 ## Data Processed
 

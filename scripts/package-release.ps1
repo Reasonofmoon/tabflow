@@ -1,4 +1,4 @@
-# Chrome Extension Release Packager for TabFlow Pro
+# Chrome Extension Release Packager for Moon-TabFlow
 $ErrorActionPreference = "Stop"
 
 $manifest = Get-Content "manifest.json" -Raw | ConvertFrom-Json
@@ -7,7 +7,7 @@ $name = "tabflow-pro"
 $distDir = "dist/${name}-v${version}"
 $zipFile = "${distDir}.zip"
 
-Write-Host "`n⚡ TabFlow Pro Release Packager" -ForegroundColor Cyan
+Write-Host "`n⚡ Moon-TabFlow Release Packager" -ForegroundColor Cyan
 Write-Host "   Version: $version" -ForegroundColor White
 Write-Host ""
 

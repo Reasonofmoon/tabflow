@@ -8,7 +8,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   // Register context menus
   chrome.contextMenus.create({
     id: 'add-bookmark',
-    title: 'TabFlow에 북마크 추가',
+    title: 'Moon-TabFlow에 북마크 추가',
     contexts: ['page', 'link']
   });
   chrome.contextMenus.create({

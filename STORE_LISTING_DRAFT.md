@@ -2,7 +2,7 @@
 
 ## Extension Name
 
-TabFlow Pro — 탭 & 북마크 통합 매니저
+Moon-TabFlow — 탭 & 북마크 통합 매니저
 
 ## Short Description (45 chars max)
 
@@ -12,7 +12,7 @@ Manage tabs & bookmarks in one side panel.
 
 ### English
 
-TabFlow Pro is the all-in-one tab and bookmark manager that lives in Chrome's side panel.
+Moon-TabFlow is the all-in-one tab and bookmark manager that lives in Chrome's side panel.
 
 **Key Features:**
 
@@ -37,7 +37,7 @@ TabFlow Pro is the all-in-one tab and bookmark manager that lives in Chrome's si
 
 ### 한국어
 
-TabFlow Pro는 크롬 사이드 패널에서 동작하는 올인원 탭 & 북마크 관리 도구입니다.
+Moon-TabFlow는 크롬 사이드 패널에서 동작하는 올인원 탭 & 북마크 관리 도구입니다.
 
 **주요 기능:**
 

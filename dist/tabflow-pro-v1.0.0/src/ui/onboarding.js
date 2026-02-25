@@ -4,7 +4,7 @@ const STEPS = {
   ko: [
     {
       icon: '⚡',
-      title: 'TabFlow Pro에 오신 것을 환영합니다!',
+      title: 'Moon-TabFlow에 오신 것을 환영합니다!',
       desc: '탭과 북마크를 <strong>한 곳에서</strong> 관리하세요.\n사이드 패널에서 모든 기능을 사용할 수 있습니다.',
       features: [
         { icon: '📋', label: '탭 매니저', sub: '모든 윈도우의 탭을 한눈에 보고 관리' },
@@ -50,7 +50,7 @@ const STEPS = {
   en: [
     {
       icon: '⚡',
-      title: 'Welcome to TabFlow Pro!',
+      title: 'Welcome to Moon-TabFlow!',
       desc: 'Manage your tabs and bookmarks <strong>all in one place</strong>.\nEverything runs in Chrome\'s side panel.',
       features: [
         { icon: '📋', label: 'Tab Manager', sub: 'View and manage all tabs across windows' },

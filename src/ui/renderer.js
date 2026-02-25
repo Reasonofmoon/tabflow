@@ -575,7 +575,7 @@ function renderSettings(m) {
     </div>
     <div class="sett"><h3>ℹ️ 정보</h3>
       <div style="font-size:var(--fs-base);color:var(--text-2);line-height:var(--lh-relaxed)">
-        <strong>TabFlow Pro</strong> v1.0<br>
+        <strong>Moon-TabFlow</strong> v1.0<br>
         탭 매니저 + 북마크 매니저 통합 도구<br>
         <span style="color:var(--text-3)">중복 제거 · 깨진 링크 검사 · AI 자동 분류 · 동기화 · 드래그앤드롭</span>
       </div>
