@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body>
+<h2>TabFlow Pro Icon Generator</h2>
+<p>Click a button to download the icon at that size.</p>
+<canvas id="c" style="display:none"></canvas>
+<div id="previews"></div>
+<script>
+const sizes = [16, 32, 48, 128];
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#3b82f6"/><stop offset="100%" style="stop-color:#a855f7"/></linearGradient></defs>
+  <rect width="128" height="128" rx="20" fill="url(#bg)"/>
+  <path d="M70 24L42 68h22L54 104l38-48H68L80 24z" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+</svg>`;
+
+const blob = new Blob([svg], {type:'image/svg+xml'});
+const url = URL.createObjectURL(blob);
+const img = new Image();
+img.onload = () => {
+  sizes.forEach(size => {
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    
+    // Preview
+    const div = document.createElement('div');
+    div.style.margin = '10px';
+    div.style.display = 'inline-block';
+    div.style.textAlign = 'center';
+    
+    const preview = document.createElement('img');
+    preview.src = canvas.toDataURL('image/png');
+    preview.style.border = '1px solid #ccc';
+    preview.style.display = 'block';
+    preview.style.marginBottom = '5px';
+    
+    const btn = document.createElement('a');
+    btn.href = canvas.toDataURL('image/png');
+    btn.download = `icon-${size}.png`;
+    btn.textContent = `📥 icon-${size}.png`;
+    btn.style.display = 'block';
+    
+    div.appendChild(preview);
+    div.appendChild(btn);
+    document.getElementById('previews').appendChild(div);
+  });
+};
+img.src = url;
+</script>
+</body>
+</html>

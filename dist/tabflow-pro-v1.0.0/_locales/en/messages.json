@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "TabFlow Pro",
+    "description": "Extension display name"
+  },
+  "extDesc": {
+    "message": "All-in-one tab & bookmark manager in Chrome's side panel",
+    "description": "Extension description"
+  },
+  "cmdSearch": {
+    "message": "Open search",
+    "description": "Keyboard shortcut description"
+  },
+  "cmdDiscard": {
+    "message": "Discard inactive tabs",
+    "description": "Keyboard shortcut description"
+  }
+}
