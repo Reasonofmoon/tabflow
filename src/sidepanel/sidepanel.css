@@ -674,6 +674,24 @@ input, select, textarea { font-family:inherit; }
 .empty h3 { font-size:var(--fs-lg); color:var(--text-1); margin-bottom:6px; }
 .empty p { font-size:var(--fs-base); color:var(--text-3); max-width:320px; line-height:var(--lh-relaxed); margin-bottom:16px; }
 
+/* Bookmark Tree (Organizer) */
+.tree-node {
+  display:flex; align-items:center; gap:6px;
+  padding:5px 8px; border-radius:var(--r-sm); cursor:default;
+  transition:var(--t); font-size:var(--fs-base); min-height:30px;
+}
+.tree-node:hover { background:var(--bg-3); }
+.tree-empty { background:var(--yellow-bg); border-left:2px solid var(--yellow); }
+.tree-empty:hover { background:rgba(234,179,8,.15); }
+.tree-icon { font-size:13px; flex-shrink:0; }
+.tree-title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tree-count {
+  font-size:var(--fs-xs); font-family:var(--mono); color:var(--text-3);
+  background:var(--bg-4); padding:1px 6px; border-radius:4px; flex-shrink:0;
+}
+.tree-actions { display:flex; gap:2px; opacity:0; transition:var(--t); flex-shrink:0; margin-left:auto; }
+.tree-node:hover .tree-actions { opacity:1; }
+
 /* Responsive */
 @media(max-width:768px) {
   .app { grid-template-columns:1fr; }

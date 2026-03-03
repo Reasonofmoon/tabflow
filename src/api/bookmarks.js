@@ -1,23 +1,32 @@
 // src/api/bookmarks.js — chrome.bookmarks API wrapper
 
-export async function getAllBookmarks() {
+export async function getUnorganizedBookmarks() {
   const tree = await chrome.bookmarks.getTree();
   const flat = [];
-  function walk(nodes, folder = 'Root') {
+  
+  // Only target links directly in main root folders (Bookmarks Bar, Other Bookmarks, Mobile Bookmarks)
+  // These usually have parentId '1', '2', '3' or are children of '0'
+  function walk(nodes, depth = 0) {
     for (const node of nodes) {
-      if (node.url) {
+      if (node.url && depth <= 2) { 
+        // depth 0 = root, depth 1 = standard folders (Bar, Other), depth 2 = direct children of standard folders
         flat.push({
           id: node.id,
           title: node.title,
           url: node.url,
-          folder,
+          folder: '미분류', // Mark as unorganized
           folderId: node.parentId,
           dateAdded: node.dateAdded,
         });
       }
-      if (node.children) walk(node.children, node.title);
+      // Only traverse down to the main standard folders to find unorganized links
+      // Do NOT traverse into user-created subfolders to avoid destroying their structure
+      if (node.children && depth < 2) {
+        walk(node.children, depth + 1);
+      }
     }
   }
+  
   walk(tree);
   return flat;
 }

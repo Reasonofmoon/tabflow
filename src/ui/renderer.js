@@ -2,6 +2,7 @@
 import { S, CATS, COLORS, generateColor } from '../core/state.js';
 import { classify } from '../core/classifier.js';
 import { getDomain, getFaviconUrl } from '../utils/url-parser.js';
+import { getTreeStats, findEmptyFolders, findDeepNested } from '../core/organizer.js';
 
 // ── Helper: escape HTML for safe rendering ──
 function esc(str) {
@@ -101,6 +102,7 @@ export function renderMain() {
     case 'bm-all': renderBmAll(m); break;
     case 'bm-clean': renderBmClean(m); break;
     case 'bm-cards': renderBmCards(m); break;
+    case 'bm-organize': renderOrganizer(m); break;
     case 'history': renderHistory(m); break;
     case 'settings': renderSettings(m); break;
   }
@@ -272,8 +274,7 @@ function renderBmDash(m) {
   m.innerHTML = `
     ${heroCard('📊', '북마크 건강도를 확인하세요', '중복·깨진 링크·분류 상태를 한눈에 파악하고, 원클릭으로 정리할 수 있습니다.',
       `<button class="btn-cta" data-action="nav" data-val="bm-clean">🧹 청소 시작하기</button>
-       <button class="btn btn-sm" data-action="export-json">📥 JSON 백업</button>
-       <button class="btn btn-sm btn-s" data-action="import-json">📤 JSON 복구</button>`
+       <button class="btn btn-sm" data-action="export-json">📥 JSON 백업</button>`
     )}
     <div class="bm-dashboard">
       <div class="bm-stat-card"><div class="num" style="color:var(--accent)">${S.bm.length}</div><div class="label">전체 북마크</div><div class="sub">${folders.length}개 폴더</div></div>
@@ -284,7 +285,7 @@ function renderBmDash(m) {
     ${quickActions([
       { icon: '🔄', label: '중복 제거', desc: `${dupCount}개 정리 가능`, action: 'remove-dups' },
       { icon: '🔗', label: '깨진 링크 삭제', desc: `${S.bmBroken.length}개 감지`, action: 'remove-broken' },
-      { icon: '🤖', label: 'AI 자동 분류', desc: '9개 카테고리', action: 'ai-classify' },
+      { icon: '🤖', label: 'AI 자동 분류', desc: '20개 카테고리', action: 'ai-classify' },
       { icon: '🌐', label: '도메인별 정렬', desc: '사이트별 폴더', action: 'domain-sort' },
     ])}
     <div class="bm-health">
@@ -560,10 +561,9 @@ function renderSettings(m) {
       ${settRow('자동 Discard', '비활성 탭을 자동으로 Discard하여 메모리 절약', 'autoDiscard')}
     </div>
     <div class="sett"><h3>📥 데이터 백업</h3>
-      <p style="font-size:var(--fs-base);color:var(--text-2);margin-bottom:12px;line-height:var(--lh-relaxed)">북마크를 JSON 파일로 내보내거나 가져올 수 있습니다.</p>
+      <p style="font-size:var(--fs-base);color:var(--text-2);margin-bottom:12px;line-height:var(--lh-relaxed)">북마크를 JSON 파일로 내보낼 수 있습니다. (복구는 크롬의 기본 북마크 관리자를 이용해주세요)</p>
       <div style="display:flex;gap:8px">
         <button class="btn btn-sm" data-action="export-json">📥 JSON 내보내기</button>
-        <button class="btn btn-sm btn-s" data-action="import-json">📤 JSON 가져오기</button>
       </div>
     </div>
     <div class="sett"><h3>📖 튜토리얼</h3>
@@ -580,6 +580,180 @@ function renderSettings(m) {
         <span style="color:var(--text-3)">중복 제거 · 깨진 링크 검사 · AI 자동 분류 · 동기화 · 드래그앤드롭</span>
       </div>
     </div>
+  `;
+}
+
+// ── BOOKMARK ORGANIZER (Restore & Organize) ──
+function renderOrganizer(m) {
+  const isRestore = S.organizerTab === 'restore';
+  const isOrganize = S.organizerTab === 'organize';
+  const preview = S.restorePreview;
+  const progress = S.restoreProgress;
+
+  // Build tree view HTML for current bookmarks
+  function renderTreeNode(node, depth = 0) {
+    if (!node) return '';
+    const indent = depth * 20;
+    const isFolder = !!node.children;
+    const isRoot = node.id === '0' || node.id === '1' || node.id === '2';
+    const childCount = node.children ? node.children.length : 0;
+    const isEmpty = isFolder && childCount === 0 && !isRoot;
+
+    let html = '';
+    if (depth > 0) {
+      html += `<div class="tree-node ${isEmpty ? 'tree-empty' : ''}" style="padding-left:${indent}px">`;
+      if (isFolder) {
+        html += `<span class="tree-icon">${isEmpty ? '📂' : '📁'}</span>`;
+        html += `<span class="tree-title" style="flex:1">${esc(node.title || '(이름 없음)')}</span>`;
+        html += `<span class="tree-count">${childCount}</span>`;
+        if (isEmpty) html += `<span class="badge" style="background:var(--yellow);color:#000;font-size:9px;padding:1px 5px;border-radius:4px;margin-left:4px">빈 폴더</span>`;
+        if (!isRoot) {
+          html += `<div class="tree-actions">`;
+          html += `<button class="ti-btn" data-action="rename-folder" data-bmid="${node.id}" title="이름 변경">✏️</button>`;
+          html += `<button class="ti-btn" data-action="sort-folder" data-bmid="${node.id}" title="내용 정렬">🔤</button>`;
+          if (isFolder && childCount > 0) html += `<button class="ti-btn" data-action="flatten-folder" data-bmid="${node.id}" title="하위 폴더 평탄화">⬆️</button>`;
+          if (isEmpty) html += `<button class="ti-btn cls" data-action="delete-empty-folder" data-bmid="${node.id}" title="삭제">✕</button>`;
+          html += `</div>`;
+        }
+      } else {
+        html += `<span class="tree-icon">🔗</span>`;
+        html += `<span class="tree-title" style="flex:1;color:var(--text-2)">${esc(node.title || node.url || '')}</span>`;
+      }
+      html += `</div>`;
+    }
+    if (node.children && depth < 4) {
+      html += node.children.map(c => renderTreeNode(c, depth + 1)).join('');
+    } else if (node.children && depth >= 4 && childCount > 0) {
+      html += `<div style="padding-left:${(depth + 1) * 20}px;color:var(--text-3);font-size:var(--fs-xs)">... ${childCount}개 더</div>`;
+    }
+    return html;
+  }
+
+  // Build preview tree for backup data
+  function renderPreviewTree(nodes, depth = 0, maxItems = 100) {
+    let html = '', count = 0;
+    for (const node of nodes) {
+      if (count >= maxItems) {
+        html += `<div style="padding-left:${depth * 18}px;color:var(--text-3);font-size:var(--fs-xs);padding:4px 0">... ${nodes.length - count}개 더</div>`;
+        break;
+      }
+      const indent = depth * 18;
+      const isFolder = !!node.children;
+      html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0 3px ${indent}px;font-size:var(--fs-sm);color:${isFolder ? 'var(--text-0)' : 'var(--text-2)'}">`;
+      html += `<span style="font-size:12px">${isFolder ? '📁' : '🔗'}</span>`;
+      html += `<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(node.title || '(이름 없음)')}</span>`;
+      if (isFolder && node.children) html += `<span style="font-size:10px;color:var(--text-3);font-family:var(--mono)">${node.children.length}</span>`;
+      html += `</div>`;
+      count++;
+      if (isFolder && node.children && depth < 3) {
+        const sub = renderPreviewTree(node.children, depth + 1, maxItems - count);
+        html += sub.html;
+        count += sub.count;
+      }
+    }
+    return { html, count };
+  }
+
+  // Get current tree stats
+  const treeStats = S.bmTree.length ? getTreeStats(S.bmTree) : { urls: 0, folders: 0, maxDepth: 0 };
+  const emptyFolders = S.bmTree.length ? findEmptyFolders(S.bmTree[0]?.children || []) : [];
+  const deepFolders = S.bmTree.length ? findDeepNested(S.bmTree[0]?.children || [], 5) : [];
+
+  m.innerHTML = `
+    ${heroCard('📦', '북마크 복원 & 폴더 정리', '백업 JSON 파일에서 북마크를 복원하거나, 현재 폴더 구조를 시각적으로 정리할 수 있습니다.')}
+    <div class="org-tabs" style="display:flex;gap:4px;margin-bottom:16px">
+      <button class="chip ${isRestore ? 'active' : ''}" data-action="org-tab" data-val="restore">📥 백업 복원</button>
+      <button class="chip ${isOrganize ? 'active' : ''}" data-action="org-tab" data-val="organize">🗂️ 폴더 정리</button>
+    </div>
+
+    ${isRestore ? `
+      <div class="sett">
+        <h3>📥 백업 파일 불러오기</h3>
+        <p style="font-size:var(--fs-base);color:var(--text-2);margin-bottom:14px;line-height:var(--lh-relaxed)">
+          TabFlow에서 내보낸 JSON 백업 파일을 선택하면 북마크가 복원됩니다.
+        </p>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-cta" data-action="load-backup-file" style="font-size:var(--fs-sm);padding:8px 16px">📂 백업 파일 선택</button>
+          ${progress > 0 && progress < 100 ? `<span style="font-size:var(--fs-sm);color:var(--accent)">복원 중... ${progress}%</span>` : ''}
+          ${progress >= 100 ? `<span style="font-size:var(--fs-sm);color:var(--green)">✅ 복원 완료!</span>` : ''}
+        </div>
+      </div>
+
+      ${progress > 0 ? `
+        <div class="sett">
+          <h3>⏳ 복원 진행률</h3>
+          <div class="health-bar" style="margin:8px 0"><div class="health-bar-fill" style="width:${progress}%;background:var(--accent);transition:width 0.3s"></div></div>
+          <div style="font-size:var(--fs-sm);color:var(--text-2)">${progress}% 완료</div>
+        </div>
+      ` : ''}
+
+      ${preview ? `
+        <div class="sett">
+          <h3>📋 백업 정보</h3>
+          <div class="bm-dashboard" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+            <div class="bm-stat-card"><div class="num" style="color:var(--accent)">${preview.stats.urls}</div><div class="label">URL</div></div>
+            <div class="bm-stat-card"><div class="num" style="color:var(--purple)">${preview.stats.folders}</div><div class="label">폴더</div></div>
+            <div class="bm-stat-card"><div class="num" style="color:var(--green);font-size:14px">${preview.stats.version}</div><div class="label">버전</div></div>
+            <div class="bm-stat-card"><div class="num" style="color:var(--text-1);font-size:11px">${new Date(preview.stats.exportedAt).toLocaleDateString('ko-KR')}</div><div class="label">내보내기 날짜</div></div>
+          </div>
+        </div>
+
+        <div class="sett">
+          <h3>🌳 폴더 구조 미리보기</h3>
+          <div style="max-height:400px;overflow-y:auto;border:1px solid var(--border-0);border-radius:var(--r);padding:12px;background:var(--bg-1)">
+            ${preview.bookmarks[0]?.children ? preview.bookmarks[0].children.map(root => {
+              const result = renderPreviewTree(root.children || [], 0, 80);
+              return `<div style="margin-bottom:8px">
+                <div style="font-weight:600;font-size:var(--fs-base);padding:6px 0;border-bottom:1px solid var(--border-0);margin-bottom:6px">📂 ${esc(root.title)}</div>
+                ${result.html}
+              </div>`;
+            }).join('') : '<div style="color:var(--text-3)">미리보기 데이터 없음</div>'}
+          </div>
+        </div>
+
+        <div class="sett">
+          <h3>🚀 복원 실행</h3>
+          <p style="font-size:var(--fs-base);color:var(--text-2);margin-bottom:14px;line-height:var(--lh-relaxed)">
+            복원 모드를 선택하고 실행하세요. <strong>클린 복원</strong>은 기존 북마크를 모두 삭제한 후 백업에서 복원합니다.
+          </p>
+          <div style="display:flex;gap:8px">
+            <button class="btn-cta" data-action="confirm-restore" data-val="append" style="font-size:var(--fs-sm);padding:8px 16px">➕ 기존에 추가</button>
+            <button class="btn btn-sm btn-d" data-action="confirm-restore" data-val="clean" style="font-size:var(--fs-sm);padding:8px 16px">🧹 클린 복원</button>
+          </div>
+          <div style="margin-top:8px;font-size:var(--fs-xs);color:var(--text-3)">⚠️ 클린 복원은 현재 모든 북마크를 삭제합니다. 먼저 백업을 만들어두세요!</div>
+        </div>
+      ` : `
+        ${emptyState('📥', '백업 파일을 선택하세요', 'tabflow-backup-YYYY-MM-DD.json 형식의 파일을 업로드하면 미리보기와 복원을 진행할 수 있습니다.')}
+      `}
+    ` : ''}
+
+    ${isOrganize ? `
+      <div class="bm-dashboard" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="bm-stat-card"><div class="num" style="color:var(--accent)">${treeStats.urls}</div><div class="label">전체 URL</div></div>
+        <div class="bm-stat-card"><div class="num" style="color:var(--purple)">${treeStats.folders}</div><div class="label">전체 폴더</div></div>
+        <div class="bm-stat-card"><div class="num" style="color:${emptyFolders.length ? 'var(--yellow)' : 'var(--green)'}">${emptyFolders.length}</div><div class="label">빈 폴더</div></div>
+        <div class="bm-stat-card"><div class="num" style="color:${deepFolders.length ? 'var(--red)' : 'var(--green)'}">${deepFolders.length}</div><div class="label">깊은 폴더 (5+)</div></div>
+      </div>
+
+      ${quickActions([
+        { icon: '🗑️', label: '빈 폴더 삭제', desc: emptyFolders.length + '개 감지', action: 'delete-all-empty-folders' },
+        { icon: '🔄', label: '트리 새로고침', desc: '최신 상태로 갱신', action: 'refresh-tree' },
+        { icon: '📥', label: 'JSON 백업', desc: '현재 상태 저장', action: 'export-json' },
+      ])}
+
+      <div class="sett">
+        <h3>🌳 전체 북마크 트리</h3>
+        <p style="font-size:var(--fs-sm);color:var(--text-2);margin-bottom:12px">폴더 옆 버튼으로 이름 변경, 정렬, 평탄화, 삭제를 할 수 있습니다.</p>
+        <div style="max-height:600px;overflow-y:auto;border:1px solid var(--border-0);border-radius:var(--r);padding:12px;background:var(--bg-1)">
+          ${S.bmTree.length ? S.bmTree[0].children.map(root =>
+            `<div style="margin-bottom:12px">
+              <div style="font-weight:600;font-size:var(--fs-base);padding:8px 0;border-bottom:1px solid var(--border-0);margin-bottom:4px">📂 ${esc(root.title)}</div>
+              ${renderTreeNode(root)}
+            </div>`
+          ).join('') : '<div style="padding:24px;text-align:center;color:var(--text-3)">트리를 로드 중...</div>'}
+        </div>
+      </div>
+    ` : ''}
   `;
 }
 

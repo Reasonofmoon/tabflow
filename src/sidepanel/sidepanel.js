@@ -3,14 +3,16 @@
 
 import { S, CATS } from '../core/state.js';
 import { getAllTabsByWindow, closeTab, discardTab, togglePin, activateTab, createTab, discardAllInactive, closeDuplicateTabs } from '../api/tabs.js';
-import { getAllBookmarks, removeBookmark } from '../api/bookmarks.js';
+import { getUnorganizedBookmarks, removeBookmark } from '../api/bookmarks.js';
 import { removeWindow } from '../api/windows.js';
 import { autoGroupByKeywords, queryGroups } from '../api/groups.js';
 import { searchHistory } from '../api/history.js';
-import { exportBackup, importBackup } from '../api/storage.js';
+import { exportBackup, importBackup, parseBackupFile } from '../api/storage.js';
 import { findDuplicates, removeDuplicates, findEmptyFolders, calculateHealthScore } from '../core/health-checker.js';
 import { checkAllLinks, checkLink } from '../core/link-checker.js';
-import { classify, classifyAndOrganize, organizeByDomain } from '../core/classifier.js';
+import { classify, classifyAndOrganize } from '../core/classifier.js';
+import { getFullBookmarkTree, renameFolder, flattenFolder, sortFolderChildren, deleteEmptyFolders } from '../core/organizer.js';
+
 import { render, renderMain, updateStats, updateBadges, updateSelBar } from '../ui/renderer.js';
 import { attachDrag } from '../ui/drag-drop.js';
 import { showContextMenu, hideContextMenu, handleContextAction, initContextMenuDismiss } from '../ui/context-menu.js';
@@ -53,7 +55,7 @@ async function loadTabs() {
 
 async function loadBookmarks() {
   try {
-    const allBm = await getAllBookmarks();
+    const allBm = await getUnorganizedBookmarks();
     S.bm = allBm.map(bm => ({
       ...bm,
       favIconUrl: '',
@@ -70,6 +72,14 @@ async function loadHistory() {
     S.hist = await searchHistory('', 100);
   } catch (err) {
     console.error('Failed to load history:', err);
+  }
+}
+
+async function loadBmTree() {
+  try {
+    S.bmTree = await getFullBookmarkTree();
+  } catch (err) {
+    console.error('Failed to load bookmark tree:', err);
   }
 }
 
@@ -120,7 +130,7 @@ async function setTheme(theme) {
 // ===================================================================
 async function init() {
   await loadSavedTheme();
-  await Promise.all([loadTabs(), loadBookmarks(), loadHistory()]);
+  await Promise.all([loadTabs(), loadBookmarks(), loadHistory(), loadBmTree()]);
   render();
   attachDrag(() => { loadTabs().then(render); });
   initContextMenuDismiss();
@@ -129,7 +139,31 @@ async function init() {
   setupSearchInput();
   setupPanelInput();
   setupKeyboardShortcuts();
-  setupJsonImport();
+  setupBackupFileInput();
+}
+
+// ── Backup file input listener ──
+function setupBackupFileInput() {
+  const input = document.getElementById('jsonFileInput');
+  if (!input) return;
+  input.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = parseBackupFile(ev.target.result);
+        S.restorePreview = parsed;
+        S.restoreProgress = 0;
+        toast('📂', `백업 로드됨: ${parsed.stats.urls} URLs, ${parsed.stats.folders} 폴더`);
+        render();
+      } catch (err) {
+        toast('⚠️', '파일 파싱 실패: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
 }
 
 // ===================================================================
@@ -402,8 +436,8 @@ function setupEventDelegation() {
           render();
           break;
         case 'domain-sort':
-          await organizeByDomain(S.bm);
-          toast('🌐', '도메인별 폴더 생성 완료');
+          await classifyAndOrganize(S.bm);
+          toast('📂', '카테고리별 분류 완료 (최대 20개)');
           await loadBookmarks();
           render();
           break;
@@ -451,9 +485,6 @@ function setupEventDelegation() {
           await exportBackup();
           toast('📥', 'JSON 백업 완료');
           break;
-        case 'import-json':
-          document.getElementById('jsonFileInput')?.click();
-          break;
 
         // ── Panel actions ──
         case 'open-panel':
@@ -494,6 +525,97 @@ function setupEventDelegation() {
         case 'reset-onboarding':
           try { await chrome.storage.local.remove('onboardingDone'); } catch {}
           showOnboarding(val || 'ko');
+          break;
+
+        // ── Organizer actions ──
+        case 'org-tab':
+          S.organizerTab = val;
+          if (val === 'organize') await loadBmTree();
+          render();
+          break;
+        case 'load-backup-file':
+          document.getElementById('jsonFileInput').click();
+          break;
+        case 'confirm-restore': {
+          if (!S.restorePreview) {
+            toast('⚠️', '먼저 백업 파일을 선택하세요');
+            break;
+          }
+          const cleanRestore = val === 'clean';
+          if (cleanRestore && !confirm('⚠️ 현재 모든 북마크가 삭제됩니다.\n정말 클린 복원하시겠습니까?')) break;
+          S.restoreProgress = 1;
+          render();
+          try {
+            const result = await importBackup(S.restorePreview, {
+              cleanRestore,
+              onProgress: (current, total) => {
+                const pct = Math.round((current / total) * 100);
+                if (pct !== S.restoreProgress && pct % 5 === 0) {
+                  S.restoreProgress = pct;
+                  render();
+                }
+              },
+            });
+            S.restoreProgress = 100;
+            const msg = `복원 완료! ${result.created}개 생성` + (result.errors ? `, ${result.errors}개 오류` : '');
+            toast('🎉', msg);
+            await loadBookmarks();
+            await loadBmTree();
+            render();
+          } catch (err) {
+            toast('⚠️', '복원 실패: ' + err.message);
+            S.restoreProgress = 0;
+            render();
+          }
+          break;
+        }
+        case 'delete-all-empty-folders': {
+          if (!S.bmTree.length) break;
+          const tree = S.bmTree[0].children || [];
+          const deleted = await deleteEmptyFolders(tree);
+          toast('🗑️', deleted + '개 빈 폴더 삭제');
+          await loadBmTree();
+          render();
+          break;
+        }
+        case 'delete-empty-folder': {
+          try {
+            await chrome.bookmarks.removeTree(bmid);
+            toast('🗑️', '폴더 삭제');
+            await loadBmTree();
+            render();
+          } catch (err) {
+            toast('⚠️', '삭제 실패: ' + err.message);
+          }
+          break;
+        }
+        case 'rename-folder': {
+          const newName = prompt('새 폴더 이름:');
+          if (!newName) break;
+          await renameFolder(bmid, newName);
+          toast('✏️', '이름 변경 완료');
+          await loadBmTree();
+          render();
+          break;
+        }
+        case 'sort-folder': {
+          await sortFolderChildren(bmid, 'name');
+          toast('🔤', '정렬 완료');
+          await loadBmTree();
+          render();
+          break;
+        }
+        case 'flatten-folder': {
+          const moved = await flattenFolder(bmid);
+          toast('⬆️', moved + '개 항목 이동 (평탄화)');
+          await loadBmTree();
+          render();
+          break;
+        }
+        case 'refresh-tree':
+          await loadBmTree();
+          toast('🔄', '트리 새로고침 완료');
+          render();
           break;
       }
     } catch (err) {
@@ -625,23 +747,6 @@ function setupKeyboardShortcuts() {
       S.wins.forEach(w => w.tabs.forEach(t => S.sel.add(t.id)));
       render();
     }
-  });
-}
-
-// ── JSON Import ──
-function setupJsonImport() {
-  document.getElementById('jsonFileInput')?.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      await importBackup(file);
-      toast('📤', 'JSON 복구 완료');
-      await loadBookmarks();
-      render();
-    } catch (err) {
-      toast('⚠️', '복구 실패: ' + err.message);
-    }
-    e.target.value = '';
   });
 }
 

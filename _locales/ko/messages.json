@@ -3,7 +3,7 @@
     "message": "Moon-TabFlow — 탭 & 북마크 통합 매니저"
   },
   "extDesc": {
-    "message": "탭 관리, 북마크 청소, AI 자동 분류, 동기화를 하나로"
+    "message": "탭 관리, 북마크 백업·복원, AI 20개 카테고리 자동 분류를 하나로"
   },
   "cmdSearch": {
     "message": "통합 검색 열기"
