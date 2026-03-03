@@ -30,12 +30,23 @@ export async function removeDuplicates(dupGroups) {
 
 export function findEmptyFolders(tree) {
   const empty = [];
+  function isDeepEmpty(node) {
+    // A leaf without children or URL = empty
+    if (!node.children) return false; // it's a URL, not empty
+    if (node.children.length === 0) return true; // no children at all
+    // Folder has children: check if ALL children are also empty folders
+    return node.children.every(c => c.children && isDeepEmpty(c));
+  }
   function walk(nodes) {
     for (const node of nodes) {
       if (node.children) {
-        if (node.children.length === 0 && node.id !== '0') {
-          empty.push(node);
+        // Skip root folders (id 0, 1, 2)
+        if (node.id !== '0' && node.id !== '1' && node.id !== '2') {
+          if (isDeepEmpty(node)) {
+            empty.push(node);
+          }
         }
+        // Always recurse into sub-folders
         walk(node.children);
       }
     }

@@ -86,10 +86,15 @@ async function loadBmTree() {
 function recalcBookmarks() {
   S.bmDups = findDuplicates(S.bm);
   S.bmBroken = []; // Actual link checking done on demand
-  S.bmEmpty = []; // Calculated when needed
+  // Calculate empty folders from the bookmark tree
+  if (S.bmTree && S.bmTree.length) {
+    S.bmEmpty = findEmptyFolders(S.bmTree[0]?.children || []);
+  } else {
+    S.bmEmpty = [];
+  }
   const dupCount = S.bmDups.reduce((s, d) => s + d.length - 1, 0);
   S.bmHealth = S.bm.length
-    ? Math.max(0, Math.round(((S.bm.length - dupCount) / S.bm.length) * 100))
+    ? Math.max(0, Math.round(((S.bm.length - dupCount - S.bmEmpty.length) / S.bm.length) * 100))
     : 100;
 }
 
@@ -429,18 +434,59 @@ function setupEventDelegation() {
           render();
           toast('🎉', '전체 청소 완료!');
           break;
-        case 'ai-classify':
-          await classifyAndOrganize(S.bm);
-          toast('🤖', 'AI 자동 분류 완료');
+        case 'ai-classify': {
+          // Load custom categories from storage
+          const stored = await chrome.storage.local.get('customCats');
+          const customRules = stored.customCats || [];
+          // Fallback: if S.bm is empty, load all bookmarks from tree
+          let bmToClassify = S.bm;
+          if (!bmToClassify.length) {
+            const tree = await chrome.bookmarks.getTree();
+            const flat = [];
+            function collect(nodes) {
+              for (const n of nodes) {
+                if (n.url) flat.push(n);
+                if (n.children) collect(n.children);
+              }
+            }
+            collect(tree);
+            bmToClassify = flat;
+          }
+          if (!bmToClassify.length) {
+            toast('⚠️', '분류할 북마크가 없습니다');
+            break;
+          }
+          toast('🤖', `${bmToClassify.length}개 북마크 분류 중...`);
+          const results = await classifyAndOrganize(bmToClassify, customRules);
+          toast('🤖', `AI 분류 완료! ${results.length}개 카테고리`);
           await loadBookmarks();
+          await loadBmTree();
           render();
           break;
+        }
         case 'domain-sort':
           await classifyAndOrganize(S.bm);
           toast('📂', '카테고리별 분류 완료 (최대 20개)');
           await loadBookmarks();
           render();
           break;
+        case 'save-custom-cats': {
+          const input = document.getElementById('customCatsInput');
+          if (!input) break;
+          const lines = input.value.split('\n').filter(l => l.trim());
+          const customCats = lines.map(line => {
+            const [name, ...kws] = line.split(':');
+            return {
+              name: name.trim(),
+              color: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'),
+              keywords: kws.join(':').split(',').map(k => k.trim().toLowerCase()).filter(Boolean),
+            };
+          }).filter(c => c.name && c.keywords.length);
+          await chrome.storage.local.set({ customCats });
+          toast('💾', `${customCats.length}개 커스텀 카테고리 저장됨`);
+          render();
+          break;
+        }
         case 'alpha-sort':
           S.bm.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'ko'));
           toast('🔤', '가나다 정렬 완료');

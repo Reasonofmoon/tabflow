@@ -168,11 +168,13 @@ function renderWindowGroup(w) {
   const tabs = applyFilter(w.tabs);
   if (!tabs.length && S.filter !== 'all') return '';
   const color = generateColor(w.id);
+  const headerBg = `linear-gradient(135deg, ${color}22, ${color}08)`;
+  const headerBorder = `${color}44`;
   const body = S.vmode === 'grid'
     ? `<div class="tg" style="padding:12px;background:var(--bg-1);border:1px solid var(--border-0);border-top:none;border-radius:0 0 var(--r) var(--r)">${tabs.map(t => renderTabCard(t, w)).join('')}</div>`
     : `<div class="tl-wrap">${tabs.map((t, i) => renderTabItem(t, w, i)).join('')}</div>`;
   return `<div class="wg" id="win-${w.id}">
-    <div class="wg-head" data-action="toggle-collapse" data-wid="${w.id}">
+    <div class="wg-head" data-action="toggle-collapse" data-wid="${w.id}" style="background:${headerBg};border-color:${headerBorder};border-left:4px solid ${color}">
       <div class="wg-hl">
         <div class="wg-dot" style="background:${color}"></div>
         <span class="wg-title">윈도우 ${w.id}</span>
@@ -286,13 +288,12 @@ function renderBmDash(m) {
       { icon: '🔄', label: '중복 제거', desc: `${dupCount}개 정리 가능`, action: 'remove-dups' },
       { icon: '🔗', label: '깨진 링크 삭제', desc: `${S.bmBroken.length}개 감지`, action: 'remove-broken' },
       { icon: '🤖', label: 'AI 자동 분류', desc: '20개 카테고리', action: 'ai-classify' },
-      { icon: '🌐', label: '도메인별 정렬', desc: '사이트별 폴더', action: 'domain-sort' },
     ])}
     <div class="bm-health">
       <h3>🏥 북마크 건강도 분석</h3>
       ${healthBar('중복 없는 비율', S.bm.length ? 100 - Math.round(dupCount / S.bm.length * 100) : 100, 'var(--accent)')}
       ${healthBar('유효 링크 비율', S.bm.length ? Math.round((S.bm.length - S.bmBroken.length) / S.bm.length * 100) : 100, 'var(--green)')}
-      ${healthBar('분류 완료 비율', S.bm.length ? Math.round(S.bm.filter(b => classify(b.url).name !== '미분류').length / S.bm.length * 100) : 100, 'var(--purple)')}
+      ${healthBar('분류 완료 비율', S.bm.length ? Math.round(S.bm.filter(b => classify(b.url).name !== '📦 기타').length / S.bm.length * 100) : 100, 'var(--purple)')}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="sett">
@@ -444,11 +445,19 @@ function renderBmClean(m) {
       <h3>🤖 AI 자동 분류</h3>
       <p style="font-size:var(--fs-base);color:var(--text-2);margin-bottom:14px;line-height:var(--lh-relaxed)">도메인과 키워드를 분석하여 북마크를 자동으로 카테고리별 폴더로 분류합니다.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        ${CATS.map(c => `<span class="bm-tag" style="background:${c.color}15;color:${c.color}">${esc(c.name)} (${c.keywords.slice(0, 3).join(', ')}…)</span>`).join('')}
+        ${CATS.map(c => `<span class="bm-tag" style="background:${c.color}15;color:${c.color}">${esc(c.name)}</span>`).join('')}
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-cta" data-action="ai-classify" style="font-size:var(--fs-sm);padding:8px 16px">🤖 자동 분류 실행</button>
-        <button class="btn btn-sm" data-action="domain-sort">🌐 도메인별 폴더 생성</button>
+      <button class="btn-cta" data-action="ai-classify" style="font-size:var(--fs-sm);padding:8px 16px;margin-bottom:18px">🤖 자동 분류 실행 (${S.bm.length}개 북마크)</button>
+
+      <h4 style="margin-top:8px;margin-bottom:8px;font-size:var(--fs-base);color:var(--text-1)">📝 커스텀 카테고리 (선택사항)</h4>
+      <p style="font-size:var(--fs-xs);color:var(--text-3);margin-bottom:8px;line-height:var(--lh-relaxed)">나만의 폴더 분류 규칙을 추가하세요. 커스텀 규칙이 기본 20개 카테고리보다 우선 적용됩니다.<br>형식: <code style="background:var(--bg-4);padding:2px 5px;border-radius:3px">폴더이름: 키워드1, 키워드2, 키워드3</code></p>
+      <textarea id="customCatsInput" placeholder="예시:
+📐 수학: math, algebra, calculus, geometry
+🎯 마케팅: marketing, seo, analytics, ads
+🏫 학원: academy, hagwon, 학원, 수업" style="width:100%;min-height:90px;background:var(--bg-3);border:1px solid var(--border-0);border-radius:var(--r-sm);padding:10px;color:var(--text-0);font-size:var(--fs-sm);font-family:var(--mono);resize:vertical;line-height:1.5"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-sm btn-p" data-action="save-custom-cats">💾 저장</button>
+        <button class="btn btn-sm" data-action="ai-classify">🤖 커스텀 규칙으로 분류</button>
       </div>
     </div>
   `;

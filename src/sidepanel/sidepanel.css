@@ -149,7 +149,7 @@ input, select, textarea { font-family:inherit; }
 /*============================================================
   LAYOUT
 ============================================================*/
-.app { display:grid; grid-template-columns:260px 1fr; grid-template-rows:54px 1fr; min-height:100vh; }
+.app { display:grid; grid-template-columns:200px 1fr; grid-template-rows:54px 1fr; height:100vh; overflow:hidden; }
 
 /*-- HEADER --*/
 .header {
@@ -214,6 +214,7 @@ input, select, textarea { font-family:inherit; }
 .sidebar {
   background:var(--bg-1); border-right:1px solid var(--border-0);
   display:flex; flex-direction:column; overflow-y:auto; padding:14px 0;
+  min-width:0;
 }
 .sb-sec { padding:0 10px; margin-bottom:18px; }
 .sb-title {
@@ -268,7 +269,7 @@ input, select, textarea { font-family:inherit; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
 /*-- MAIN --*/
-.main { padding:18px 24px; overflow-y:auto; }
+.main { padding:18px 24px; overflow-y:auto; height:calc(100vh - 54px); }
 
 /*-- BUTTONS --*/
 .btn {
