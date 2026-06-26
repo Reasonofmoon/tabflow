@@ -1,7 +1,7 @@
 // src/core/classifier.js — Category-based classification engine (max 20 categories)
-import { CATS } from './state.js';
+import { CATS, S } from './state.js';
 
-export function classify(url, customRules = []) {
+export function classify(url, customRules = S.customCats || []) {
   const rules = [...customRules, ...CATS];
   const lower = (url || '').toLowerCase();
   for (const rule of rules) {
