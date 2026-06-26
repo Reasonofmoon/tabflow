@@ -493,12 +493,9 @@ function setupEventDelegation() {
           render();
           break;
         case 'filter-bm-cat': {
-          // Toggle cat filter chip UI
-          target.closest('.cat-grid')?.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-          target.classList.add('active');
-          S.query = val || '';
+          // Filter card view by category (independent of the search box)
+          S.bmCatFilter = val || '';
           render();
-          S.query = '';
           break;
         }
 

@@ -466,7 +466,12 @@ function renderBmClean(m) {
 // ── BOOKMARK CARD VIEW ──
 function renderBmCards(m) {
   const q = S.query.toLowerCase();
-  const filtered = q ? S.bm.filter(b => (b.title || '').toLowerCase().includes(q) || (b.url || '').toLowerCase().includes(q)) : S.bm;
+  const catFilter = S.bmCatFilter || '';
+  const filtered = S.bm.filter(b => {
+    if (q && !((b.title || '').toLowerCase().includes(q) || (b.url || '').toLowerCase().includes(q))) return false;
+    if (catFilter && classify(b.url).name !== catFilter) return false;
+    return true;
+  });
 
   m.innerHTML = `
     ${hint('🃏', '<strong>카드 뷰:</strong> 북마크를 시각적으로 탐색할 수 있습니다. 카테고리 필터로 원하는 항목만 빠르게 찾으세요.')}
@@ -478,8 +483,8 @@ function renderBmCards(m) {
       <div class="tr"><button class="btn btn-sm" data-action="alpha-sort">🔤 정렬</button></div>
     </div>
     <div class="cat-grid" style="margin-bottom:16px">
-      <button class="chip active" data-action="filter-bm-cat" data-val="">전체</button>
-      ${CATS.map(c => `<button class="chip" data-action="filter-bm-cat" data-val="${c.name}" style="border-color:${c.color}33;color:${c.color}">${esc(c.name)}</button>`).join('')}
+      <button class="chip ${!catFilter ? 'active' : ''}" data-action="filter-bm-cat" data-val="">전체</button>
+      ${CATS.map(c => `<button class="chip ${catFilter === c.name ? 'active' : ''}" data-action="filter-bm-cat" data-val="${c.name}" style="border-color:${c.color}33;color:${c.color}">${esc(c.name)}</button>`).join('')}
     </div>
     <div class="bm-cards">
       ${filtered.map(b => {

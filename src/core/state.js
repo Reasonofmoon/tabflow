@@ -11,6 +11,7 @@ export const S = {
   vmode: 'list',
   filter: 'all',
   query: '',
+  bmCatFilter: '',      // Card view category filter (matches CATS[].name; '' = all)
   sel: new Set(),
   ctx: null,
   drag: null,
