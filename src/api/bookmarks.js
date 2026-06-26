@@ -31,6 +31,30 @@ export async function getUnorganizedBookmarks() {
   return flat;
 }
 
+// Read ALL bookmarks recursively (including those inside user-created subfolders).
+// Used so the dashboard / card view reflects the entire bookmark collection,
+// not just loose unorganized links.
+export async function getAllBookmarks() {
+  const tree = await chrome.bookmarks.getTree();
+  const flat = [];
+  function walk(nodes) {
+    for (const node of nodes) {
+      if (node.url) {
+        flat.push({
+          id: node.id,
+          title: node.title,
+          url: node.url,
+          folderId: node.parentId,
+          dateAdded: node.dateAdded,
+        });
+      }
+      if (node.children) walk(node.children);
+    }
+  }
+  walk(tree);
+  return flat;
+}
+
 export async function getBookmarkTree() {
   return chrome.bookmarks.getTree();
 }

@@ -454,7 +454,7 @@ function renderBmClean(m) {
       <textarea id="customCatsInput" placeholder="예시:
 📐 수학: math, algebra, calculus, geometry
 🎯 마케팅: marketing, seo, analytics, ads
-🏫 학원: academy, hagwon, 학원, 수업" style="width:100%;min-height:90px;background:var(--bg-3);border:1px solid var(--border-0);border-radius:var(--r-sm);padding:10px;color:var(--text-0);font-size:var(--fs-sm);font-family:var(--mono);resize:vertical;line-height:1.5"></textarea>
+🏫 학원: academy, hagwon, 학원, 수업" style="width:100%;min-height:90px;background:var(--bg-3);border:1px solid var(--border-0);border-radius:var(--r-sm);padding:10px;color:var(--text-0);font-size:var(--fs-sm);font-family:var(--mono);resize:vertical;line-height:1.5">${esc(S.customCats.map(c => `${c.name}: ${c.keywords.join(', ')}`).join('\n'))}</textarea>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn btn-sm btn-p" data-action="save-custom-cats">💾 저장</button>
         <button class="btn btn-sm" data-action="ai-classify">🤖 커스텀 규칙으로 분류</button>
@@ -484,7 +484,7 @@ function renderBmCards(m) {
     </div>
     <div class="cat-grid" style="margin-bottom:16px">
       <button class="chip ${!catFilter ? 'active' : ''}" data-action="filter-bm-cat" data-val="">전체</button>
-      ${CATS.map(c => `<button class="chip ${catFilter === c.name ? 'active' : ''}" data-action="filter-bm-cat" data-val="${c.name}" style="border-color:${c.color}33;color:${c.color}">${esc(c.name)}</button>`).join('')}
+      ${[...S.customCats, ...CATS].map(c => `<button class="chip ${catFilter === c.name ? 'active' : ''}" data-action="filter-bm-cat" data-val="${esc(c.name)}" style="border-color:${c.color}33;color:${c.color}">${esc(c.name)}</button>`).join('')}
     </div>
     <div class="bm-cards">
       ${filtered.map(b => {

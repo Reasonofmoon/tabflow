@@ -3,7 +3,7 @@
 
 import { S, CATS } from '../core/state.js';
 import { getAllTabsByWindow, closeTab, discardTab, togglePin, activateTab, createTab, discardAllInactive, closeDuplicateTabs } from '../api/tabs.js';
-import { getUnorganizedBookmarks, removeBookmark } from '../api/bookmarks.js';
+import { getUnorganizedBookmarks, getAllBookmarks, removeBookmark } from '../api/bookmarks.js';
 import { removeWindow } from '../api/windows.js';
 import { autoGroupByKeywords, queryGroups } from '../api/groups.js';
 import { searchHistory } from '../api/history.js';
@@ -55,7 +55,7 @@ async function loadTabs() {
 
 async function loadBookmarks() {
   try {
-    const allBm = await getUnorganizedBookmarks();
+    const allBm = await getAllBookmarks();
     S.bm = allBm.map(bm => ({
       ...bm,
       favIconUrl: '',
@@ -133,8 +133,14 @@ async function setTheme(theme) {
 // ===================================================================
 //  INITIALIZATION
 // ===================================================================
+async function loadCustomCats() {
+  const stored = await chrome.storage.local.get('customCats');
+  S.customCats = stored.customCats || [];
+}
+
 async function init() {
   await loadSavedTheme();
+  await loadCustomCats();
   await Promise.all([loadTabs(), loadBookmarks(), loadHistory(), loadBmTree()]);
   render();
   attachDrag(() => { loadTabs().then(render); });
@@ -483,6 +489,7 @@ function setupEventDelegation() {
             };
           }).filter(c => c.name && c.keywords.length);
           await chrome.storage.local.set({ customCats });
+          S.customCats = customCats;   // apply immediately everywhere (card view, tags, filter)
           toast('💾', `${customCats.length}개 커스텀 카테고리 저장됨`);
           render();
           break;

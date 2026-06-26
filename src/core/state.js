@@ -12,6 +12,7 @@ export const S = {
   filter: 'all',
   query: '',
   bmCatFilter: '',      // Card view category filter (matches CATS[].name; '' = all)
+  customCats: [],       // User-defined categories (persisted in chrome.storage.local); applied before CATS
   sel: new Set(),
   ctx: null,
   drag: null,
